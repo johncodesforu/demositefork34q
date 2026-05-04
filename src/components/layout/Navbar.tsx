@@ -42,7 +42,7 @@ export default function Navbar() {
             <span className="text-white font-bold text-xl">K</span>
           </div>
           <span className="font-display font-bold text-2xl tracking-tighter hidden sm:block">
-            k34q's <span className="text-accent">Demo</span>
+            k34q's <span className="text-accent">demo</span>
           </span>
         </Link>
 
