@@ -149,23 +149,95 @@ export const MOCK_PRODUCTS: Product[] = [
     inventory: 40,
     rating: 4.5,
     reviewsCount: 31
+  },
+  {
+    id: "p13",
+    name: "Test Product 13",
+    description: "Multi-layered tech shell with adaptive climate control.",
+    price: 20.00,
+    images: ["https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=800&auto=format&fit=crop"],
+    category: "Apparel",
+    inventory: 25,
+    rating: 4.8,
+    reviewsCount: 14
+  },
+  {
+    id: "p14",
+    name: "Test Product 14",
+    description: "Sleek monochromatic utility vest for urban explorers.",
+    price: 20.00,
+    images: ["https://images.unsplash.com/photo-1618354691373-d851c5c3a991?q=80&w=800&auto=format&fit=crop"],
+    category: "Apparel",
+    inventory: 35,
+    rating: 4.6,
+    reviewsCount: 22
+  },
+  {
+    id: "p15",
+    name: "Test Product 15",
+    description: "Reinforced synthetic leather jacket with neon accents.",
+    price: 20.00,
+    images: ["https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800&auto=format&fit=crop"],
+    category: "Apparel",
+    inventory: 15,
+    rating: 4.9,
+    reviewsCount: 9
+  },
+  {
+    id: "p16",
+    name: "Test Product 16",
+    description: "Advanced thermal-knit sweater for extreme environments.",
+    price: 20.00,
+    images: ["https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=800&auto=format&fit=crop"],
+    category: "Apparel",
+    inventory: 50,
+    rating: 4.7,
+    reviewsCount: 18
+  },
+  {
+    id: "p17",
+    name: "Test Product 17",
+    description: "Hyper-breathable training gear with biometric tracking integration.",
+    price: 20.00,
+    images: ["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop"],
+    category: "Apparel",
+    inventory: 40,
+    rating: 4.5,
+    reviewsCount: 27
+  },
+  {
+    id: "p18",
+    name: "Test Product 18",
+    description: "Minimalist urban apparel with concealed storage compartments.",
+    price: 20.00,
+    images: ["https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=800&auto=format&fit=crop"],
+    category: "Apparel",
+    inventory: 20,
+    rating: 4.4,
+    reviewsCount: 11
   }
 ];
 
 export async function seedProducts() {
   try {
     const querySnapshot = await getDocs(collection(db, COLLECTION));
-    if (querySnapshot.empty) {
-      console.log("Database empty, starting seed process...");
-      for (const product of MOCK_PRODUCTS) {
+    const existingNames = new Set(querySnapshot.docs.map(doc => doc.data().name));
+    
+    let addedCount = 0;
+    for (const product of MOCK_PRODUCTS) {
+      if (!existingNames.has(product.name)) {
         const { id, ...data } = product;
         await addDoc(collection(db, COLLECTION), data);
+        addedCount++;
       }
-      console.log("Successfully seeded products");
+    }
+    
+    if (addedCount > 0) {
+      console.log(`Successfully seeded ${addedCount} new products`);
     }
   } catch (error) {
     // If it's a permission error, we log it normally as it's expected for non-admins
-    if (error instanceof Error && error.message.includes("permission")) {
+    if (error instanceof Error && (error.message.includes("permission") || error.message.includes("insufficient"))) {
       console.warn("Seeding skipped: Current user does not have admin permissions.");
     } else {
       console.error("Error seeding products:", error);
@@ -186,8 +258,30 @@ export async function getProducts(filters?: { category?: string; sort?: string; 
     }
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    
+    // Fallback to mock data if DB is empty to prevent blank screen for new users
+    if (products.length === 0) {
+      let filteredMock = [...MOCK_PRODUCTS];
+      if (filters?.category && filters.category !== "All") {
+        filteredMock = filteredMock.filter(p => p.category === filters.category);
+      }
+      if (filters?.limit) {
+        filteredMock = filteredMock.slice(0, filters.limit);
+      }
+      return filteredMock;
+    }
+
+    return products;
   } catch (error) {
+    // If it's a permission error, we still want to show mock data
+    if (error instanceof Error && (error.message.includes("permission") || error.message.includes("insufficient"))) {
+      let filteredMock = [...MOCK_PRODUCTS];
+      if (filters?.category && filters.category !== "All") {
+        filteredMock = filteredMock.filter(p => p.category === filters.category);
+      }
+      return filteredMock;
+    }
     handleFirestoreError(error, OperationType.LIST, COLLECTION);
     return [];
   }
@@ -200,8 +294,14 @@ export async function getProductById(id: string) {
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as Product;
     }
-    return null;
+    
+    // Fallback for mock IDs
+    return MOCK_PRODUCTS.find(p => p.id === id) || null;
   } catch (error) {
+    // Fallback for mock IDs on permission error
+    const mock = MOCK_PRODUCTS.find(p => p.id === id);
+    if (mock) return mock;
+    
     handleFirestoreError(error, OperationType.GET, `${COLLECTION}/${id}`);
     return null;
   }

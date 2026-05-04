@@ -12,21 +12,55 @@ import {
   Share2, 
   Sparkles,
   ChevronRight,
-  Zap
+  Zap,
+  CheckCircle2
 } from "lucide-react";
 import { getProductById, getProducts } from "@/src/services/productService";
 import { Product } from "@/src/types";
 import { formatCurrency, cn } from "@/src/lib/utils";
 import ProductCard from "@/src/components/products/ProductCard";
+import { useCart } from "@/src/context/CartContext";
+import { useNavigate } from "react-router-dom";
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [product, setProduct] = React.useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = React.useState<Product[]>([]);
   const [selectedImage, setSelectedImage] = React.useState(0);
   const [selectedVariants, setSelectedVariants] = React.useState<Record<string, string>>({});
   const [quantity, setQuantity] = React.useState(1);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isAdded, setIsAdded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (id) {
+      setIsLoading(true);
+      getProductById(id).then((data) => {
+        setProduct(data);
+        setIsLoading(false);
+        if (data) {
+          getProducts({ category: data.category, limit: 4 }).then(prods => {
+            setRelatedProducts(prods.filter(p => p.id !== id));
+          });
+        }
+      });
+    }
+  }, [id]);
+
+  const handleAddCart = () => {
+    if (!product) return;
+    addToCart(product, quantity, selectedVariants);
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    addToCart(product, quantity, selectedVariants);
+    navigate("/checkout");
+  };
 
   React.useEffect(() => {
     if (id) {
@@ -156,12 +190,32 @@ export default function ProductDetail() {
           {/* Quantity and Actions */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex items-center glass rounded-2xl px-4 py-2 self-start sm:self-auto">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 text-xl font-bold">-</button>
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 text-xl font-bold hover:text-accent transition-colors">-</button>
               <span className="w-12 text-center font-bold px-4">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="p-2 text-xl font-bold">+</button>
+              <button onClick={() => setQuantity(quantity + 1)} className="p-2 text-xl font-bold hover:text-accent transition-colors">+</button>
             </div>
-            <button className="flex-1 bg-accent text-black font-bold h-16 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform neon-glow">
-              <ShoppingCart className="w-5 h-5" /> Add to Cart
+            <button 
+              onClick={handleAddCart}
+              className={cn(
+                "flex-1 font-bold h-16 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all neon-glow",
+                isAdded ? "bg-green-500 text-white" : "bg-white text-black"
+              )}
+            >
+              {isAdded ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" /> Added to Collection
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-5 h-5" /> Add to Cart
+                </>
+              )}
+            </button>
+            <button 
+              onClick={handleBuyNow}
+              className="flex-1 bg-accent text-black font-bold h-16 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all neon-glow shadow-[0_0_20px_rgba(20,241,149,0.2)]"
+            >
+              <Zap className="w-5 h-5" /> Buy Now
             </button>
             <button className="p-5 glass rounded-2xl hover:text-red-500 transition-colors">
               <Heart className="w-6 h-6" />
@@ -233,11 +287,21 @@ export default function ProductDetail() {
       {/* Sticky Mobile Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-black/60 backdrop-blur-2xl border-t border-white/10 z-40">
          <div className="flex gap-4">
-            <button className="flex-1 bg-white text-black font-bold h-14 rounded-2xl flex items-center justify-center gap-2">
-              Add To Cart
+            <button 
+              onClick={handleAddCart}
+              className={cn(
+                "flex-1 font-bold h-14 rounded-2xl flex items-center justify-center gap-2 transition-all",
+                isAdded ? "bg-green-500 text-white" : "bg-white text-black"
+              )}
+            >
+              {isAdded ? <CheckCircle2 className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+              {isAdded ? "Added" : "Add To Cart"}
             </button>
-            <button className="flex-1 bg-accent text-black font-bold h-14 rounded-2xl flex items-center justify-center gap-2">
-              Buy Now
+            <button 
+              onClick={handleBuyNow}
+              className="flex-1 bg-accent text-black font-bold h-14 rounded-2xl flex items-center justify-center gap-2"
+            >
+              <Zap className="w-5 h-5" /> Buy Now
             </button>
          </div>
       </div>

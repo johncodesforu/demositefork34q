@@ -1,9 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Heart, Star, Zap } from "lucide-react";
+import { ShoppingCart, Heart, Star, Zap, CheckCircle2 } from "lucide-react";
 import { Product } from "@/src/types";
 import { formatCurrency, cn } from "@/src/lib/utils";
 import { Link } from "react-router-dom";
+import { useCart } from "@/src/context/CartContext";
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +12,16 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered] = React.useState(false);
+  const [isAdded, setIsAdded] = React.useState(false);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product, 1);
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
+  };
 
   return (
     <motion.div
@@ -84,8 +95,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          <button className="p-3 bg-white text-black rounded-2xl hover:bg-accent transition-colors">
-            <ShoppingCart className="w-5 h-5" />
+          <button 
+            onClick={handleAddToCart}
+            className={cn(
+              "p-3 rounded-2xl transition-all duration-300",
+              isAdded ? "bg-green-500 text-white scale-110" : "bg-white text-black hover:bg-accent"
+            )}
+          >
+            {isAdded ? <CheckCircle2 className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
           </button>
         </div>
       </div>

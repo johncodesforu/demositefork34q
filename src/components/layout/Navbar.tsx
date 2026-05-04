@@ -84,10 +84,10 @@ export default function Navbar() {
             </button>
           )}
           
-          <Link to="/checkout" className="p-2 text-white/70 hover:text-accent relative transition-colors">
+          <Link to="/cart" className="p-2 text-white/70 hover:text-accent relative transition-colors">
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-accent text-black text-[10px] font-bold flex items-center justify-center rounded-full">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-black text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-black">
                 {cartCount}
               </span>
             )}

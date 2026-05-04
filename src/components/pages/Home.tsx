@@ -160,27 +160,46 @@ export default function Home() {
 
 function CategorySection({ category }: { category: string }) {
   const [products, setProducts] = React.useState<Product[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    getProducts({ category, limit: 3 }).then(setProducts);
+    setLoading(true);
+    getProducts({ category, limit: 3 }).then((data) => {
+      setProducts(data);
+      setLoading(false);
+    });
   }, [category]);
 
-  if (products.length === 0) return null;
+  if (!loading && products.length === 0) return null;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-accent px-4 py-1 bg-accent/10 border border-accent/20 rounded-full">
-          {category}
-        </h3>
-        <Link to={`/shop?category=${encodeURIComponent(category)}`} className="text-sm text-white/40 hover:text-white flex items-center gap-1 transition-colors">
-          Explore {category} <ArrowRight className="w-3 h-3" />
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-bold font-display tracking-tight text-white group cursor-pointer inline-flex items-center gap-2">
+            <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+            {category}
+          </h3>
+        </div>
+        <Link 
+          to={`/shop?category=${encodeURIComponent(category)}`} 
+          className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-accent flex items-center gap-2 transition-all group"
+        >
+          Explore Collection 
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
+        {loading ? (
+          [1, 2, 3].map((n) => (
+            <div key={n} className="h-80 glass rounded-3xl animate-pulse" />
+          ))
+        ) : (
+          products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))
+        )}
       </div>
     </div>
   );
